@@ -526,6 +526,10 @@ var exports = {
    * @returns {object} config object
    */
   loadConfig: function(fp) {
+    function asArray(e) {
+      return _.isArray(e) ? e : [e];
+    }
+
     if (!fp) {
       return {};
     }
@@ -540,12 +544,20 @@ var exports = {
       config.dirname = path.dirname(fp);
 
       if (config['extends']) {
-        var baseConfig = exports.loadConfig(path.resolve(config.dirname, config['extends']));
-        config = _.merge({}, baseConfig, config, function(a, b) {
-          if (_.isArray(a)) {
-            return a.concat(b);
-          }
-        });
+
+        var mergeArgs = [{}].concat( 
+            asArray(config['extends']).map(function(file) {
+              return exports.loadConfig(path.resolve(config.dirname, file));
+            }))
+            .concat([config,
+              function(a, b) {
+                if (_.isArray(a)) {
+                  return a.concat(b);
+                }
+            }]);
+      
+        config = _.merge.apply(_,mergeArgs);
+
         delete config['extends'];
       }
 

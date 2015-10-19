@@ -74,7 +74,11 @@ exports.group = {
               }
             }
           }
-        }));
+        }))
+        .withArgs(sinon.match(/file10\.json$/))
+          .returns("{\"node\":false, \"bar\": true}")
+        .withArgs(sinon.match(/file11\.json$/))
+          .returns("{\"extends\":[\"file2.json\", \"file10.json\"]}");
 
       this.sinon.stub(shjs, "test")
         .withArgs("-e", sinon.match(/file\.js$/)).returns(true)
@@ -100,6 +104,15 @@ exports.group = {
       ]);
       test.equal(cli.run.lastCall.args[0].config.node, true);
       test.equal(cli.run.lastCall.args[0].config['extends'], void 0);
+
+      // merges using array syntax for extends
+
+      cli.interpret([
+        "node", "jshint", "file.js", "--config", "file11.json"
+      ]);
+      test.equal(cli.run.lastCall.args[0].config.node, false);
+      test.equal(cli.run.lastCall.args[0].config.globals.foo, true);
+      test.equal(cli.run.lastCall.args[0].config.bar, true);      
 
       // Overwrites options after extending
       cli.interpret([
